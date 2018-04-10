@@ -152,31 +152,32 @@ def main():
     fft_complex = [complex(x) for x in fft_data]
     print("FFT of Verification Data: ")
     fft_verification = DT.fft_cooley(fft_complex)
-    with open("FFT_verification_TEST.txt", "w+") as f:
-        f.write("FFT of Verification Data:\n")
-        for d in fft_verification:
-            line = str(d)
-            line = line[1:-1] # get rid of ()
-            line = line.replace('j', 'i') # convert back to std. form
-            f.write(line + "\n")
+    # with open("FFT_verification_TEST.txt", "w+") as f:
+    #     f.write("FFT of Verification Data:\n")
+    #     for d in fft_verification:
+    #         line = str(d)
+    #         line = line[1:-1] # get rid of ()
+    #         line = line.replace('j', 'i') # convert back to std. form
+    #         f.write(line + "\n")
     
     fft_complex = [complex(x) for x in w1y] #SINE WAVE1
     print("FFT of Sine Wave: ")
     fft_verification = DT.fft_cooley(fft_complex)
-    with open("FFT_sine_TEST.txt", "w+") as f:
-        f.write("Sine Data Points:\n")
-        for d in w1y:
-            f.write(str(d) + "\n")
-        f.write("FFT of Sine Wave Data:\n")
-        for d in fft_verification:
-            line = str(d)
-            line = line[1:-1] # get rid of ()
-            line = line.replace('j', 'i') # convert back to std. form
-            f.write(line + "\n")
+    # with open("FFT_sine_TEST.txt", "w+") as f:
+    #     f.write("Sine Data Points:\n")
+    #     for d in w1y:
+    #         f.write(str(d) + "\n")
+    #     f.write("FFT of Sine Wave Data:\n")
+    #     for d in fft_verification:
+    #         line = str(d)
+    #         line = line[1:-1] # get rid of ()
+    #         line = line.replace('j', 'i') # convert back to std. form
+    #         f.write(line + "\n")
 
     #--
     # Problem 1a TEST
-    S = [5, 10, 100]
+    # Compute, for S samples and up to k summations, the complex waves:
+    S = [3, 10, 50]
     N = 512
     t1 = 1/N
     tlist = []
@@ -193,68 +194,168 @@ def main():
 
     # Fs(t)
     # OUTER LOOP = t
+    # for t in range(N):
+    #     fst_current = 0.0 # hold sum of k->s
+    #     # INNER LOOP = k->s
+    #     for k in range(1, S[0]):
+    #         fst_current += (sin(DT.TWO_PI*(2*k-1)*t)) / (2*k-1)
+    #     fst1.append(fst_current)
+    # for t in range(N):
+    #     fst1_current = 0.0 # hold sum of k->s
+    #     fst2_current = 0.0 # hold sum of k->s
+    #     fst3_current = 0.0 # hold sum of k->s
+    #     # INNER LOOP = k->s
+    #     for k in range(1, S[0]+1):
+    #         fst1_current += (sin(DT.TWO_PI*(2*k-1)*t)) / (2*k-1)
+    #     for k in range(1, S[1]+1):
+    #         fst2_current += (sin(DT.TWO_PI*(2*k-1)*t)) / (2*k-1)
+    #     for k in range(1, S[2]+1):
+    #         fst3_current += (sin(DT.TWO_PI*(2*k-1)*t)) / (2*k-1)
+    #     fst1.append(fst1_current)
+    #     fst2.append(fst2_current)
+    #     fst3.append(fst3_current)
+
+    # TEST 3
+    # for k in range(1, S[0]+1):
+    #     fst1_current = 0.0 # hold sum of k->s
+    #     # INNER LOOP = k->s
+    #     for t in range(N):
+    #         fst1_current = (sin(DT.TWO_PI*(2*k-1)*tlist[t])) / (2*k-1)
+    #         fst1.append(fst1_current)
+    # for k in range(1, S[1]+1):
+    #     fst2_current = 0.0 # hold sum of k->s
+    #     # INNER LOOP = k->s
+    #     for t in range(N):
+    #         fst2_current = (sin(DT.TWO_PI*(2*k-1)*tlist[t])) / (2*k-1)
+    #         fst2.append(fst2_current)
+    # for k in range(1, S[2]+1):
+    #     fst3_current = 0.0 # hold sum of k->s
+    #     # INNER LOOP = k->s
+    #     for t in range(N):
+    #         fst3_current = (sin(DT.TWO_PI*(2*k-1)*tlist[t])) / (2*k-1)
+    #         fst3.append(fst3_current)
+
+    # TEST 4 - success!
     for t in range(N):
-        fst_current = 0.0 # hold sum of k->s
+        fst1_current = 0.0 # hold sum of k->s
         # INNER LOOP = k->s
-        for k in range(1, S[0]):
-            fst_current += (sin(DT.TWO_PI*(2*k-1)*t)) / (2*k-1)
-        fst1.append(fst_current)
+        for k in range(1, S[0]+1):
+            fst1_current += (sin(DT.TWO_PI*(2*k-1)*tlist[t])) / (2*k-1)
+        fst1.append(fst1_current)
     for t in range(N):
-        fst_current = 0.0 # hold sum of k->s
+        fst2_current = 0.0 # hold sum of k->s
         # INNER LOOP = k->s
-        for k in range(1, S[1]):
-            fst_current += (sin(DT.TWO_PI*(2*k-1)*t)) / (2*k-1)
-        fst2.append(fst_current)
+        for k in range(1, S[1]+1):
+            fst2_current += (sin(DT.TWO_PI*(2*k-1)*tlist[t])) / (2*k-1)
+        fst2.append(fst2_current)
     for t in range(N):
-        fst_current = 0.0 # hold sum of k->s
+        fst3_current = 0.0 # hold sum of k->s
         # INNER LOOP = k->s
-        for k in range(1, S[2]):
-            # temp = sin(DT.TWO_PI*(2*k-1)) / (2*k-1)
-            # print(temp)
-            fst_current += (sin(DT.TWO_PI*(2*k-1)*t)) / (2*k-1)
-        fst3.append(fst_current)
+        for k in range(1, S[2]+1):
+            fst3_current += (sin(DT.TWO_PI*(2*k-1)*tlist[t])) / (2*k-1)
+        fst3.append(fst3_current)
+
+    # for t in range(N):
+    #     fst_current = 0.0 # hold sum of k->s
+    #     # INNER LOOP = k->s
+    #     for k in range(1, S[1]):
+    #         fst_current += (sin(DT.TWO_PI*(2*k-1)*t)) / (2*k-1)
+    #     fst2.append(fst_current)
+    # for t in range(N):
+    #     fst_current = 0.0 # hold sum of k->s
+    #     # INNER LOOP = k->s
+    #     for k in range(1, S[2]):
+    #         # temp = sin(DT.TWO_PI*(2*k-1)) / (2*k-1)
+    #         # print(temp)
+    #         fst_current += (sin(DT.TWO_PI*(2*k-1)*t)) / (2*k-1)
+    #     fst3.append(fst_current)
     #TEST
-    print("Fs(t) 1:")
-    with open("fst.txt", "w+") as f:
-        f.write("Fs(t):\n")
-        for i in range(len(fst1)):
-            f.write(str(fst1[i]))
-            f.write("\n")
+    # print("Fs(t) 1:")
+    # with open("fst.txt", "w+") as f:
+    #     f.write("Fs(t):\n")
+    #     for i in range(len(fst1)):
+    #         f.write(str(fst1[i]))
+    #         f.write("\n")
     
     #Gs(t)
     # OUTER LOOP = t
-    for t in range(N):
-        gst_current = 0.0 # hold sum of k->s
-        # INNER LOOP = k->s
-        for k in range(1, S[0]):
-            gst_current += (sin(DT.TWO_PI*(2*k)*t)) / (2*k)
-        gst1.append(gst_current)
-    for t in range(N):
-        gst_current = 0.0 # hold sum of k->s
-        # INNER LOOP = k->s
-        for k in range(1, S[1]):
-            gst_current += (sin(DT.TWO_PI*(2*k)*t)) / (2*k)
-        gst2.append(gst_current)
-    for t in range(N):
-        gst_current = 0.0 # hold sum of k->s
-        # INNER LOOP = k->s
-        for k in range(1, S[2]):
-            # temp = sin(DT.TWO_PI*(2*k-1)) / (2*k)
-            # print(temp)
-            gst_current += (sin(DT.TWO_PI*(2*k-1)*t)) / (2*k)
-        gst3.append(gst_current)
+    # for t in range(N):
+    #     gst_current = 0.0 # hold sum of k->s
+    #     # INNER LOOP = k->s
+    #     for k in range(1, S[0]):
+    #         gst_current += (sin(DT.TWO_PI*(2*k)*t)) / (2*k)
+    #     gst1.append(gst_current)
+    # for t in range(N):
+    #     gst_current = 0.0 # hold sum of k->s
+    #     # INNER LOOP = k->s
+    #     for k in range(1, S[1]):
+    #         gst_current += (sin(DT.TWO_PI*(2*k)*t)) / (2*k)
+    #     gst2.append(gst_current)
+    # for t in range(N):
+    #     gst_current = 0.0 # hold sum of k->s
+    #     # INNER LOOP = k->s
+    #     for k in range(1, S[2]):
+    #         # temp = sin(DT.TWO_PI*(2*k-1)) / (2*k)
+    #         # print(temp)
+    #         gst_current += (sin(DT.TWO_PI*(2*k-1)*t)) / (2*k)
+    #     gst3.append(gst_current)
 
-    plt.title('Problem 1a Complex Wave')
-    plt.plot(tlist, fst3, 'ro') # red dots
+    for t in range(N):
+        gst1_current = 0.0 # hold sum of k->s
+        # INNER LOOP = k->s
+        for k in range(1, S[0]+1):
+            gst1_current += (sin(DT.TWO_PI*(2*k)*tlist[t])) / (2*k)
+        gst1.append(gst1_current)
+    for t in range(N):
+        gst2_current = 0.0 # hold sum of k->s
+        # INNER LOOP = k->s
+        for k in range(1, S[1]+1):
+            gst2_current += (sin(DT.TWO_PI*(2*k)*tlist[t])) / (2*k)
+        gst2.append(gst2_current)
+    for t in range(N):
+        gst3_current = 0.0 # hold sum of k->s
+        # INNER LOOP = k->s
+        for k in range(1, S[2]+1):
+            gst3_current += (sin(DT.TWO_PI*(2*k)*tlist[t])) / (2*k)
+        gst3.append(gst3_current)
+
+    # Show 1a waves as plots:
+    plt.title('Problem 1a Complex Waves part i')
+    plt.plot(tlist, fst1, 'r-', tlist, fst2, 'g-', tlist, fst3, 'b-') # rgb lines
     xmin = 0
-    xmax = N
+    xmax = max(tlist)
     
-    ymax = max(fst3) * 1.5
+    ymax = max(fst3)
+    if ymax >= 0:
+        ymax += abs(ymax / 2.0)
+    # if ymax <= 0:
+    #     ymax = 0.1 + abs(ymax)
     ymin = min(fst3)
     if ymin < 0:
-        ymin *= 1.5
+        ymin *= 1.2
+        # ymin -= ymin
     else:
-        ymin *= -1.5
+        ymin *= -1.2
+    axis_list = [xmin, xmax, ymin, ymax] #xmin
+    plt.axis(axis_list)
+    plt.show()
+
+    plt.title('Problem 1a Complex Waves part ii')
+    plt.plot(tlist, gst1, 'r-', tlist, gst2, 'g-', tlist, gst3, 'b-') # rgb lines
+    xmin = 0
+    xmax = max(tlist)
+    
+    ymax = max(gst3)
+    if ymax >= 0:
+        ymax += abs(ymax / 2.0)
+    # if ymax <= 0:
+    #     ymax = 0.1 + abs(ymax)
+    ymin = min(gst3)
+    if ymin < 0:
+        ymin *= 1.2
+        # ymin -= ymin
+    else:
+        ymin *= -1.2
     axis_list = [xmin, xmax, ymin, ymax] #xmin
     plt.axis(axis_list)
     plt.show()
