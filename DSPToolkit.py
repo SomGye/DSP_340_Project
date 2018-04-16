@@ -244,9 +244,10 @@ def fft_rosetta(x):
 def fft_cooley(data, direction=1):
     """Get the Fast Fourier Transform of list data,
     using a recursive form of the Cooley-Tukey Algorithm.
-        
+        NOTE: This is for one-dimensional data, with length
+        equal to to a Power of Two, only!
     Arguments:
-        data {list} -- A list of y-data, generally from a signal/wave
+        data {list} -- A 1D list of y-data, generally from a signal/wave
     
     Keyword Arguments:
         direction {int} -- 1 for regular, -1 for inverse (default: {1})
@@ -254,24 +255,30 @@ def fft_cooley(data, direction=1):
     Returns:
         list -- A list of new FT data
     """
+    # Check if more than 1D:
+    if isinstance(data[0], list):
+        raise TypeError("Data must be a 1D list!")
+    # Get len and base case:
     N = len(data)
-    if N <= 1:
+    if N <= 1:      # base case
         return data
-    
+    # Check for power of 2:
+    if ((N & (N - 1)) != 0):
+        raise ValueError("Length of Data MUST be a Power of 2!") # ERROR
+    # Split up:
     even = fft_cooley(data[0::2])
     odd = fft_cooley(data[1::2])
-    twiddles = [cmath.exp(direction * -2j*cmath.pi*k/N)*odd[k] for k in range(N//2)]
+    # Get e^():
+    ft_exponent = [cmath.exp(direction * -2j*cmath.pi*k/N)*odd[k] for k in range(N//2)]
+    # Return halves:
+    return [even[k] + ft_exponent[k] for k in range(N//2)] + \
+           [even[k] - ft_exponent[k] for k in range(N//2)]
 
-    return [even[k] + twiddles[k] for k in range(N//2)] + \
-           [even[k] - twiddles[k] for k in range(N//2)]
-
-def two_dim_fft(data, xlen, ylen, direction=1):
+def two_dim_fft(data, direction=1):
     """Get a 2D FFT of a set of data.
     
     Arguments:
         data {list} -- Given 2D data for iteration
-        xlen {int} -- X dimension
-        ylen {int} -- Y dimension
     
     Keyword Arguments:
         direction {int} -- 1 for regular, -1 for inverse (default: {1})
@@ -279,17 +286,69 @@ def two_dim_fft(data, xlen, ylen, direction=1):
     Returns:
         list -- A 2D list of FT values
     """
+    # LINK: https://stackoverflow.com/questions/4455076/how-to-access-the-ith-column-of-a-numpy-multidimensional-array
 
-    result = []
-    inner_result = []
+    lenx = len(data)
+    leny = len(data[0])
+    # Pre-emptive check to ensure powers of 2 length/width!
+    if (((lenx & (lenx - 1)) != 0) or lenx == 0) or \
+         (((leny & (leny - 1)) != 0) or leny == 0):
+        return False # ERROR
 
-    for x in range(xlen):
-        inner_result.clear()
-        for y in range(ylen):
-            inner_result.append(fft_cooley(data[y], direction))
-        result.append(deepcopy(inner_result)) # needed to retain cleared objs
-    return result
+    # Convert to complex arrays:
+    array_X = np.asarray(data, complex) # ORIG data as complex array
+    array_Y = np.zeros((len(data), len(data[0]), 1), complex) # col FFT
+    array_Z = np.zeros((len(data), len(data[0]), 1), complex) # col + row FFT
+
+    # Outer loop
+    for d in range(len(array_X)): # outer rows
+        # Step 1 Inner Loop (Orig X -> Y): 
+        # Column Based!
+        temp_col = np.zeros((len(array_X), 1, 1), complex) # reset
+        for c in range(len(array_X)):
+            temp_col = array_X[:,c] # get all entries from column c
+            temp_fft = fft_cooley(temp_col, direction)
+            # Map new FFT data to column in Y
+            for r in range(len(array_Y)):
+                array_Y[r][c] = temp_fft[r] # map r,c to r of fft
+        # Step 2 Inner Loop (Y -> Z)
+        # Row Based!
+        temp_row = np.zeros((len(array_Y[0]), 1, 1), complex) # reset
+        for r in range(len(array_Y)):
+            temp_row = array_Y[r,:] # get all entries from row r
+            temp_fft = fft_cooley(temp_row, direction)
+            # Map new FFT data to row in Z
+            for c in range(len(array_Z[0])):
+                array_Z[r][c] = temp_fft[c] # map r,c to c of fft
+    # return array_Z #ORIG
+    # Return final FFT array, with extra dimension squeezed out:
+    return np.squeeze(array_Z)
+
+def psd(ft_data, is_list=True):
+    """Gets the Power Spectral Density (Energy) of
+    a Fourier Transform.
+    Assumes a list of data by default, but can
+    also work with singular values.
     
+    Arguments:
+        ft_data {list or float} -- A list or single value, as float.
+    
+    Keyword Arguments:
+        list {bool} -- Whether the data is a list or single value (default: {True})
+    """
+    N = 0
+    if is_list:
+        N = len(ft_data)
+        psd_result = []
+        temp_psd = 0+0j
+        for n in range(N):
+            temp_psd = complex(abs(ft_data[n]) * abs(ft_data[n]))
+            psd_result.append(temp_psd)
+        return psd_result
+    else:
+        return complex(abs(ft_data) * abs(ft_data))
+
+#OLD...
 # def FFTCooleyTukey(data, N=64, direction=1):
 #     """Performs a recursive Fast Fourier Transform
 #     using the Cooley-Tukey method, on a list of doubles.

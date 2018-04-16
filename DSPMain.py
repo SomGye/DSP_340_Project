@@ -112,7 +112,6 @@ def main():
 
     #--
     # FFT TEST
-    fft_data = [26160.0, 19011.0, 18757.0, 18405.0, 17888.0, 14720.0, 14285.0,17018.0, 18014.0, 17119.0, 16400.0, 17497.0, 17846.0, 15700.0, 17636.0, 17181.0] #NEW
     print("\n\t * FFT TEST")
     fft_cwave1 = DT.fft_cooley(cwave1)
     fft_cwave1test = np.fft.fft(cwave1)
@@ -148,10 +147,16 @@ def main():
     plt.plot(w1x, fft_real, 'go')
     plt.show()
 
-    #NEW
+    # FFT TEST NEW
+    print("\n\t * FFT TEST NEW")
+    fft_data = [26160.0, 19011.0, 18757.0, 18405.0, 17888.0, 14720.0, 14285.0,17018.0, 18014.0, 17119.0, 16400.0, 17497.0, 17846.0, 15700.0, 17636.0, 17181.0] #NEW
     fft_complex = [complex(x) for x in fft_data]
     print("FFT of Verification Data: ")
     fft_verification = DT.fft_cooley(fft_complex)
+    for d in fft_verification:
+        print(d)
+    print("--")
+    # fft_np_verification = np.fft.fft(fft_complex)
     # with open("FFT_verification_TEST.txt", "w+") as f:
     #     f.write("FFT of Verification Data:\n")
     #     for d in fft_verification:
@@ -173,6 +178,9 @@ def main():
     #         line = line[1:-1] # get rid of ()
     #         line = line.replace('j', 'i') # convert back to std. form
     #         f.write(line + "\n")
+    for d in fft_verification:
+        print(d)
+    print("--")
 
     #--
     # Problem 1a TEST
