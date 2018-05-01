@@ -7,6 +7,16 @@ import numpy as np
 # GLOBALS
 TWO_PI = math.pi * 2.0 # only compute once
 ONE_PI = math.pi
+PI2 = 6.283185306 # TEST; from dtmf_decode.py
+scale = 32767 # 16-bit unsigned short
+Fs = 44100 # sampling rate
+Sn = 4096 # n-samples per file
+keys = '1', '2', '3', 'A', \
+	'4', '5', '6', 'B', \
+	'7', '8', '9', 'C', \
+	'*', '0', '#', 'D' 			# Phone Keypad
+F1 = [697, 770, 852, 941] 		# Left, Rows
+F2 = [1209, 1336, 1477, 1633] 	# Top, Cols
 
 class DSPWave(object):
     """A set of parameters and functions for
@@ -260,19 +270,41 @@ def fft_cooley(data, direction=1):
         raise TypeError("Data must be a 1D list!")
     # Get len and base case:
     N = len(data)
+    # NEW
+    # if N <= 1 and direction < 1: # base case inv.
+    #     return (1/N) * data
     if N <= 1:      # base case
         return data
     # Check for power of 2:
     if ((N & (N - 1)) != 0):
         raise ValueError("Length of Data MUST be a Power of 2!") # ERROR
     # Split up:
-    even = fft_cooley(data[0::2])
-    odd = fft_cooley(data[1::2])
+    # even = fft_cooley(data[0::2]) # ORIG
+    # odd = fft_cooley(data[1::2])
+    even = fft_cooley(data[0::2], direction)
+    odd = fft_cooley(data[1::2], direction)
     # Get e^():
+    # ft_exponent = [cmath.exp(direction * -2j*cmath.pi*k/N)*odd[k] for k in range(N//2)] # ORIG
+    # ft_exponent = direction * [cmath.exp(-2j*cmath.pi*k/N)*odd[k] for k in range(N//2)]
     ft_exponent = [cmath.exp(direction * -2j*cmath.pi*k/N)*odd[k] for k in range(N//2)]
     # Return halves:
+    # if direction != 1:
+    #     return 1//N * ([even[k] + ft_exponent[k] for k in range(N//2)] + \
+    #        [even[k] - ft_exponent[k] for k in range(N//2)])
     return [even[k] + ft_exponent[k] for k in range(N//2)] + \
            [even[k] - ft_exponent[k] for k in range(N//2)]
+
+def fft_cooley_inv(data): # was output
+    """Uses the existing FFT Cooley-Tukey function
+    to apply the inverse to its output.
+    
+    Returns:
+        list -- inverse FT data
+    """
+
+    N = len(data)
+    fft_result = fft_cooley(data)
+    return [x/N for x in fft_result] # data / length
 
 def two_dim_fft(data, direction=1):
     """Get a 2D FFT of a set of data.
@@ -302,11 +334,11 @@ def two_dim_fft(data, direction=1):
 
     # Outer loop
     for d in range(len(array_X)): # outer rows
-        # Step 1 Inner Loop (Orig X -> Y): 
+        # Step 1 Inner Loop (Orig X -> Y):
         # Column Based!
         temp_col = np.zeros((len(array_X), 1, 1), complex) # reset
         for c in range(len(array_X)):
-            temp_col = array_X[:,c] # get all entries from column c
+            temp_col = array_X[:, c] # get all entries from column c
             temp_fft = fft_cooley(temp_col, direction)
             # Map new FFT data to column in Y
             for r in range(len(array_Y)):
@@ -315,27 +347,134 @@ def two_dim_fft(data, direction=1):
         # Row Based!
         temp_row = np.zeros((len(array_Y[0]), 1, 1), complex) # reset
         for r in range(len(array_Y)):
-            temp_row = array_Y[r,:] # get all entries from row r
+            temp_row = array_Y[r, :] # get all entries from row r
             temp_fft = fft_cooley(temp_row, direction)
             # Map new FFT data to row in Z
             for c in range(len(array_Z[0])):
                 array_Z[r][c] = temp_fft[c] # map r,c to c of fft
-    # return array_Z #ORIG
     # Return final FFT array, with extra dimension squeezed out:
     return np.squeeze(array_Z)
 
-def psd(ft_data, is_list=True):
+def two_dim_fft2(data, inverse=False):
+    """Get a 2D FFT of a set of data.
+    
+    Arguments:
+        data {list} -- Given 2D data for iteration
+    
+    Keyword Arguments:
+        inverse {bool} -- False for regular, True for inverse (default: {False})
+    
+    Returns:
+        list -- A 2D list of FT values
+    """
+    # LINK: https://stackoverflow.com/questions/4455076/how-to-access-the-ith-column-of-a-numpy-multidimensional-array
+
+    lenx = len(data)
+    leny = len(data[0])
+    # Pre-emptive check to ensure powers of 2 length/width!
+    if (((lenx & (lenx - 1)) != 0) or lenx == 0) or \
+         (((leny & (leny - 1)) != 0) or leny == 0):
+        return False # ERROR
+
+    # Convert to complex arrays:
+    array_X = np.asarray(data, complex) # ORIG data as complex array
+    array_Y = np.zeros((len(data), len(data[0]), 1), complex) # col FFT
+    array_Z = np.zeros((len(data), len(data[0]), 1), complex) # col + row FFT
+
+    # Step 1 Inner Loop (Orig X -> Y):
+    # Column Based!
+    temp_col = np.zeros((len(array_X), 1, 1), complex) # reset
+    for c in range(len(array_X)):
+        temp_col = array_X[:, c] # get all entries from column c
+        if not inverse:
+            temp_fft = fft_cooley(temp_col)
+        else:
+            temp_fft = fft_cooley_inv(temp_col)
+        # Map new FFT data to column in Y
+        for r in range(len(array_Y)):
+            array_Y[r][c] = temp_fft[r] # map r,c to r of fft
+    # Step 2 Inner Loop (Y -> Z)
+    # Row Based!
+    temp_row = np.zeros((len(array_Y[0]), 1, 1), complex) # reset
+    for r in range(len(array_Y)):
+        temp_row = array_Y[r, :] # get all entries from row r
+        if not inverse:
+            temp_fft = fft_cooley(temp_row)
+        else:
+            temp_fft = fft_cooley_inv(temp_row)
+        # Map new FFT data to row in Z
+        for c in range(len(array_Z[0])):
+            array_Z[r][c] = temp_fft[c] # map r,c to c of fft
+    # Return final FFT array, with extra dimension squeezed out:
+    return np.squeeze(array_Z)
+
+# def two_dim_fft_inv(data):
+#     """Get an inverse 2D FFT of a set of data.
+    
+#     Arguments:
+#         data {list} -- Given 2D data for iteration
+    
+#     Keyword Arguments:
+#         direction {int} -- 1 for regular, -1 for inverse (default: {1})
+    
+#     Returns:
+#         list -- A 2D list of FT values
+#     """
+#     # LINK: https://stackoverflow.com/questions/4455076/how-to-access-the-ith-column-of-a-numpy-multidimensional-array
+
+#     lenx = len(data)
+#     leny = len(data[0])
+#     # Pre-emptive check to ensure powers of 2 length/width!
+#     if (((lenx & (lenx - 1)) != 0) or lenx == 0) or \
+#          (((leny & (leny - 1)) != 0) or leny == 0):
+#         return False # ERROR
+
+#     # Convert to complex arrays:
+#     array_X = np.asarray(data, complex) # ORIG data as complex array
+#     array_Y = np.zeros((len(data), len(data[0]), 1), complex) # col FFT
+#     array_Z = np.zeros((len(data), len(data[0]), 1), complex) # col + row FFT
+
+#     # Step 1 Inner Loop (Orig X -> Y):
+#     # Column Based!
+#     temp_col = np.zeros((len(array_X), 1, 1), complex) # reset
+#     for c in range(len(array_X)):
+#         temp_col = array_X[:, c] # get all entries from column c
+#         temp_fft = fft_cooley_inv(temp_col)
+#         # Map new FFT data to column in Y
+#         for r in range(len(array_Y)):
+#             array_Y[r][c] = temp_fft[r] # map r,c to r of fft
+#     # Step 2 Inner Loop (Y -> Z)
+#     # Row Based!
+#     temp_row = np.zeros((len(array_Y[0]), 1, 1), complex) # reset
+#     for r in range(len(array_Y)):
+#         temp_row = array_Y[r, :] # get all entries from row r
+#         temp_fft = fft_cooley_inv(temp_row)
+#         # Map new FFT data to row in Z
+#         for c in range(len(array_Z[0])):
+#             array_Z[r][c] = temp_fft[c] # map r,c to c of fft
+#     # Return final FFT array, with extra dimension squeezed out:
+#     return np.squeeze(array_Z)
+
+def psd(data, is_list=True, need_FT=False):
     """Gets the Power Spectral Density (Energy) of
     a Fourier Transform.
     Assumes a list of data by default, but can
     also work with singular values.
     
     Arguments:
-        ft_data {list or float} -- A list or single value, as float.
+        data {list or float} -- A list or single value, as float.
     
     Keyword Arguments:
-        list {bool} -- Whether the data is a list or single value (default: {True})
+        is_list {bool} -- Whether the data is a list or single value (default: {True})
+        need_FT {bool} -- Whether the FT is needed first (default: {False})
     """
+    # Get FT first if needed:
+    ft_data = []
+    if need_FT:
+        ft_data = fft_cooley(data)
+    else:
+        ft_data = data[:] # slice copy
+    # Get Pulse Spectral Density:
     N = 0
     if is_list:
         N = len(ft_data)
@@ -345,35 +484,76 @@ def psd(ft_data, is_list=True):
             temp_psd = complex(abs(ft_data[n]) * abs(ft_data[n]))
             psd_result.append(temp_psd)
         return psd_result
-    else:
+    else: # scalar
         return complex(abs(ft_data) * abs(ft_data))
 
-#OLD...
-# def FFTCooleyTukey(data, N=64, direction=1):
-#     """Performs a recursive Fast Fourier Transform
-#     using the Cooley-Tukey method, on a list of doubles.
-#     Number of samples must be a power of two, and the
-#     direction can be positive (regular) or negative (inverse).
-    
-#     Arguments:
-#         data {list} -- a 1D list of doubles/floats/integers
-    
-#     Keyword Arguments:
-#         N {int} -- Number of samples taken (default: {64})
-#         direction {int} -- The direction of the transform; 
-#         regular or inverse (default: {1})
-#     """
-#     theta = (-1*TWO_PI*direction)/N
-#     r = N/2
-#     j = complex(0, 1) # eq. to cmath.sqrt(-1)
+# DTMF stuff
+def read_dtmf_data(data_filename):
+    """Get integer data points from simple text file.
 
-#     # Loop 1: calculate Discrete Fourier Transform:
-#     # EMULATE DO WHILE LOOP
-#     i = 1
-#     while i < (N-1):
-#         w = math.cos(i*theta) + j * math.sin(i*theta) # w becomes complex!
-#         k = 0
-#         while k < (N-1):
-#             u = 1
-#             for m in range(r-1):
-#                 t = FFTCooleyTukey(data, k+m) - FFTCooleyTukey(data, k+m+r)
+	Arguments:
+		data_filename {string} -- text file location
+
+	Returns:
+		list -- 1D list of data points as int
+	"""
+
+    olddata = open(data_filename, 'r')
+    newdata = []
+    for line in olddata:
+        if line != '' and line != '\n':
+            newdata.append(int(line))
+    olddata.close()
+    return newdata
+
+def dtmf_decoder(data):
+    """Decode a Dual-Tone Multi-Frequency signal,
+	given a list of signal data points, and return
+	the appropriate keypad entry.
+
+	Arguments:
+		data {list} -- A list of signal data points
+
+	Returns:
+		list -- Returns a list of decoded key, frequencies found, and the orig. frequency set.
+	"""
+    freqsets = []
+	# Loop thru left/top frequency table:
+    for f1 in F1:
+        for f2 in F2:
+            diff = 0
+			# Loop thru given data samples:
+            for i in range(Sn): # no phase shift!
+                p = i*1.0/Sn
+                S = scale+scale*(math.sin(p*f1*TWO_PI)+math.sin(p*f2*TWO_PI)) / 2.0
+                diff += abs(S-data[i]) # reference point for distortion
+            freqsets.append((diff, f1, f2))
+	# Get freq. set with minimum 'distortion':
+    f1, f2 = min(freqsets)[1:] # determine minimal distortion, keep only freqs!
+	# Cross-reference Frequency Tables:
+    i, j = F1.index(f1), F2.index(f2)
+    freq1, freq2 = F1[i], F2[j]
+	# Decode with Key Formula (4 * i * j):
+    decoded_key = keys[4*i+j]
+	# Return result set:
+    return [decoded_key, freq1, freq2, freqsets]
+
+def get_switch_data(sign_data):
+    """Get the frequency sign change "switch"
+    data for a series of sign bins.
+    
+    Arguments:
+        sign_data {list} -- A list of negative/positive signs from a set of Fourier transform data.
+    
+    Returns:
+        list -- Switch data list.
+    """
+
+    switch = [0] # init 1st elem!
+    for x in range(0, len(sign_data) - 1):
+        # Detect change in sign:
+        if sign_data[x] < sign_data[x + 1]:
+            switch.append(1)
+        else: # no change
+            switch.append(0)
+    return switch
