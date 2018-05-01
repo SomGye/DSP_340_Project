@@ -1,157 +1,18 @@
 import matplotlib.pyplot as plt # for graphing
 import cmath                    # for complex number funcs
 from math import sin, pi, log, floor
-import numpy as np # TEST
+import numpy as np
 import cv2 # OpenCV for imgs
 from collections import Counter
 import DSPToolkit as DT
 
-# Globals
+## Author: Maxwell Crawford
+
+# GLOBALS
 EPSILON = 0.000000000000001
 IMG_SIZE = 512
 
 def main():
-    # # Create wave objects
-    # wave1 = DT.DSPWave() # default settings
-    # wave2 = DT.DSPWave(1.2, 2, 0.1, 0.1)
-    # coswave = DT.DSPWave(1, 1, pi / 2.0, 0) # only phase shift!
-
-    # # Get wave x/y axes:
-    # w1x = wave1.generateTimeSet()
-    # w1y = wave1.generateSineSampleSet()
-    # w2x = wave2.generateTimeSet()
-    # w2y = wave2.generateSineSampleSet()
-    # cosx = coswave.generateTimeSet()
-    # cosy = coswave.generateSineSampleSet() # was sine...
-    # # cosy = coswave.generateCosineSampleSet()
-
-    # # Get complex waveforms:
-    # cwave1 = DT.waveAddition(w1y, w2y)
-    # cwave2 = DT.waveMultiplication(w1y, w2y)
-
-    # # Plot wave 1:
-    # print("\n\t * Sine Wave 1")
-    # plt.title('Sine Wave 1')
-    # plt.plot(w1x, w1y, 'b-') # blue line
-    # xmax = max(w1x) * 1.5
-    # xmin = min(w1x)
-    # if xmin < 0:
-    #     xmin *= 1.5
-    # else:
-    #     xmin *= -1.5
-    # ymax = max(w1y) * 1.5
-    # ymin = min(w1y)
-    # if ymin < 0:
-    #     ymin *= 1.5
-    # else:
-    #     ymin *= -1.5
-    # axis_list = [xmin, xmax, ymin, ymax]
-    # plt.axis(axis_list)
-    # plt.show()
-
-    # # Plot wave 2:
-    # print("\n\t * Sine Wave 2")
-    # plt.title('Sine Wave 2')
-    # plt.plot(w2x, w2y, 'r-') # red line
-    # xmax = max(w2x) * 1.5
-    # xmin = min(w2x)
-    # if xmin < 0:
-    #     xmin *= 1.5
-    # else:
-    #     xmin *= -1.5
-    # ymax = max(w2y) * 1.5
-    # ymin = min(w2y)
-    # if ymin < 0:
-    #     ymin *= 1.5
-    # else:
-    #     ymin *= -1.5
-    # axis_list = [xmin, xmax, ymin, ymax]
-    # plt.axis(axis_list)
-    # plt.show()
-
-    # # Plot cosine wave:
-    # print("\n\t * Cosine Wave")
-    # plt.title('Cosine Wave')
-    # plt.plot(cosx, cosy, 'g-') # green line
-    # xmax = max(cosx) * 1.5
-    # xmin = min(cosx)
-    # if xmin < 0:
-    #     xmin *= 1.5
-    # else:
-    #     xmin *= -1.5
-    # ymax = max(cosy) * 1.5
-    # ymin = min(cosy)
-    # if ymin < 0:
-    #     ymin *= 1.5
-    # else:
-    #     ymin *= -1.5
-    # axis_list = [xmin, xmax, ymin, ymax]
-    # plt.axis(axis_list)
-    # plt.show()
-
-    # # Plot wave 1 and wave 2:
-    # print("\n\t * Sine Waves 1 and 2")
-    # plt.title('Sine Waves 1 and 2')
-    # plt.plot(w1x, w1y, 'b-', w2x, w2y, 'r-')
-    # plt.show()
-
-    # # Plot complex wave 1 (add):
-    # print("\n\t * Complex Wave 1 - Addition")
-    # plt.title('Complex Wave 1 - Addition')
-    # if len(w1x) < len(w2x):
-    #     plt.plot(w1x, cwave1, 'bs')
-    #     plt.show()
-    # else:
-    #     plt.plot(w2x, cwave1, 'bs')
-    #     plt.show()
-
-    # # Plot complex wave 2 (mult):
-    # print("\n\t * Complex Wave 2 - Multiplication")
-    # plt.title('Complex Wave 2 - Multiplication')
-    # if len(w1x) < len(w2x):
-    #     plt.plot(w1x, cwave2, 'bs')
-    #     plt.show()
-    # else:
-    #     plt.plot(w2x, cwave2, 'bs')
-    #     plt.show()
-
-    # #--
-    # # FFT TEST
-    # print("\n\t * FFT TEST")
-    # fft_cwave1 = DT.fft_cooley(cwave1)
-    # fft_cwave1test = np.fft.fft(cwave1)
-    # fft_wave = DT.fft_cooley(w1y)
-    # fft_wavetest = np.fft.fft(w1y)
-
-    # fft_real = [x.real for x in fft_wave]
-
-    # plt.title('Wave 1 FFT')
-    # plt.plot(w1x, fft_real, 'go')
-    # plt.show()
-
-    # fft_real = [x.real for x in fft_wavetest]
-    # plt.title('Wave 1 FFT numpy vers')
-    # plt.plot(w1x, fft_real, 'go')
-    # plt.show()
-
-    # # FFT TEST NEW
-    # print("\n\t * FFT TEST NEW")
-    # fft_data = [26160.0, 19011.0, 18757.0, 18405.0, 17888.0, 14720.0, 14285.0,17018.0, 18014.0, 17119.0, 16400.0, 17497.0, 17846.0, 15700.0, 17636.0, 17181.0] #NEW
-    # fft_complex = [complex(x) for x in fft_data]
-    # print("FFT of Verification Data: ")
-    # fft_verification = DT.fft_cooley(fft_complex)
-    # for d in fft_verification:
-    #     print(d)
-    # print("--")
-    
-    # fft_complex = [complex(x) for x in w1y] #SINE WAVE1
-    # print("FFT of Sine Wave: ")
-    # fft_verification = DT.fft_cooley(fft_complex)
-    # for d in fft_verification:
-    #     print(d)
-    # print("--")
-
-    #--
     ## Problem 1a
     print("\n\t # Problem 1a...")
     # Compute, for S samples and up to k summations, the complex waves:
@@ -371,8 +232,6 @@ def main():
     #     print(str(r)[1:-1])
     # print("--")
 
-    # TEST - switch data...
-    print("TEST switch data...")
     # Get FTs of A1, B1:
     A1 = DT.fft_cooley(tonedata1)
     B1 = DT.fft_cooley(tonedata2)
@@ -508,7 +367,6 @@ def main():
     C2 = np.copy(img2) # PULSE
 
     ## Draw white dots in region R
-    # NOTE: have to do manual array method!
     ## C1 - test signal
     # Iteration 1:
     # row 180, col 220 -> +140 row, +110 col
@@ -641,6 +499,30 @@ def main():
 
     # Ensure correct format for mag img display:
     ymag = np.asarray(ymag, np.uint8)
+
+    # Create an experimental image of the markup region:
+    yex = np.copy(ymag)
+
+    # Init. vars for markup region:
+    markup_start = floor(IMG_SIZE / 2.6666) # 192
+    markup_end = floor(IMG_SIZE / 1.54)     # 332 -> including this
+    col_start = floor(IMG_SIZE * 0.4)       # 200
+    col_end = floor(IMG_SIZE * 0.6)         # 300
+
+    # Markup the region with orange:
+    for x in range(markup_start, markup_end + 1):
+        for y in range(col_start, col_end + 1):
+            # Check that cell is NOT black:
+            if yex[x][y][0] > 0 and \
+                yex[x][y][1] > 0 and \
+                yex[x][y][2] > 0:
+                # Paint cell orange:
+                yex[x][y][0] = 5
+                yex[x][y][1] = 140
+                yex[x][y][2] = 255
+
+    # Ensure correct format for mag img display:
+    yex = np.asarray(yex, np.uint8)
     # --
     print("\n\t * Displaying signal images...")
     # Display C1 - initial test signal
@@ -657,6 +539,9 @@ def main():
     # Display y of k top magnitudes:
     cv2.imwrite("y_of_k_top.png", ymag, [cv2.IMWRITE_PNG_COMPRESSION, 0])
     cv2.imshow("Y of k top mags (real-only)", ymag)
+    # Display y of k experimental markup:
+    cv2.imwrite("y_of_k_markup.png", yex, [cv2.IMWRITE_PNG_COMPRESSION, 0])
+    cv2.imshow("Y of k markup (real-only)", yex)
     cv2.waitKey(0)
 
 if __name__ == "__main__":
